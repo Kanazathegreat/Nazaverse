@@ -111,12 +111,14 @@ export default function Home() {
         </div>
 
         {/* 2. Headline + subhead + CTA */}
-        <div className="relative z-10 text-center flex flex-col items-center gap-4 max-w-sm">
+        <div className="relative z-10 text-center flex flex-col items-center gap-4 max-w-2xl mx-auto">
           <h1
-            className="text-4xl sm:text-5xl font-bold tracking-tighter text-primary leading-[1.05]"
+            className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-primary leading-[1.05] max-w-2xl mx-auto"
             style={fadeIn(80)}
           >
-            Your whole world,<br className="hidden sm:block" /> one window.
+            Your whole world,
+            <br />
+            one window.
           </h1>
           <p className="text-base sm:text-lg text-secondary leading-relaxed" style={fadeIn(200)}>
             Nazaverse is the link-in-bio that feels like home.
@@ -162,22 +164,20 @@ export default function Home() {
           // Fixed height so the absolute children have room to breathe
           style={{ height: '280px' }}
         >
-          {/* Back window — left-center on desktop, slightly behind */}
+          {/* Back window — centered on mobile, overlapping/offset on desktop */}
           <div
             className={`absolute bg-surface rounded-xl overflow-hidden ${floating ? 'animate-float-a' : ''}`}
             style={{
-              // Sizes: mobile 240px wide / desktop 280px wide
-              width: 'clamp(220px, 42vw, 300px)',
-              height: 'clamp(210px, 38vw, 270px)',
-              // Desktop: left-center. Mobile: centered with a small left offset.
-              left: 'clamp(0px, 8%, 14%)',
-              top: '8px',
-              // Entrance: only apply the fadeIn transform while not yet floating
+              width: 'clamp(240px, 45vw, 300px)',
+              height: 'clamp(220px, 40vw, 270px)',
+              left: 'calc(50% - clamp(240px, 45vw, 300px) * 0.7)',
+              top: '10px',
               ...(floating ? {} : {
-                ...fadeIn(420, true),
+                opacity: entered ? 1 : 0,
                 transform: entered
                   ? 'rotate(-4deg) translateY(0) scale(1)'
-                  : 'rotate(-4deg) translateY(8px) scale(0.96)',
+                  : 'rotate(-4deg) translateY(12px) scale(0.96)',
+                transition: 'opacity 400ms ease 420ms, transform 400ms ease 420ms',
               }),
               boxShadow: '0 10px 36px -8px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05)',
             }}
@@ -185,19 +185,21 @@ export default function Home() {
             <WindowCard gradientFrom="#A8C8FF" gradientTo="#FFBFA0" />
           </div>
 
-          {/* Front window — right-center on desktop, in front */}
+          {/* Front window — centered on mobile, overlapping/offset on desktop (closer to center for clear overlap) */}
           <div
             className={`absolute bg-surface rounded-xl overflow-hidden ${floating ? 'animate-float-b' : ''}`}
             style={{
-              width: 'clamp(220px, 42vw, 300px)',
-              height: 'clamp(210px, 38vw, 270px)',
-              right: 'clamp(0px, 8%, 14%)',
-              top: '20px',
+              width: 'clamp(240px, 45vw, 300px)',
+              height: 'clamp(220px, 40vw, 270px)',
+              left: 'calc(50% - clamp(240px, 45vw, 300px) * 0.3)',
+              top: '25px',
+              zIndex: 20,
               ...(floating ? {} : {
-                ...fadeIn(540, true),
+                opacity: entered ? 1 : 0,
                 transform: entered
                   ? 'rotate(3deg) translateY(0) scale(1)'
-                  : 'rotate(3deg) translateY(8px) scale(0.96)',
+                  : 'rotate(3deg) translateY(12px) scale(0.96)',
+                transition: 'opacity 400ms ease 540ms, transform 400ms ease 540ms',
               }),
               boxShadow: '0 20px 50px -10px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.07)',
             }}
