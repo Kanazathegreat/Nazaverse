@@ -1,0 +1,46 @@
+import Link from 'next/link';
+import { Home } from 'lucide-react';
+
+export default function NotFound() {
+  return (
+    <main className="min-h-screen py-10 px-4 flex items-center justify-center bg-background">
+      <div className="w-full max-w-[480px] rounded-2xl bg-surface shadow-macos border border-black/[0.08] overflow-hidden">
+        {/* macOS Window Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.05] bg-surface/80 backdrop-blur-md">
+          <div className="flex items-center space-x-2">
+            <span className="w-3 h-3 rounded-full bg-traffic-red inline-block shadow-sm" />
+            <span className="w-3 h-3 rounded-full bg-traffic-yellow inline-block shadow-sm" />
+            <span className="w-3 h-3 rounded-full bg-traffic-green inline-block shadow-sm" />
+          </div>
+          <span className="text-xs font-medium text-secondary select-none tracking-tight">
+            Nazaverse Window
+          </span>
+          <div className="w-12 flex justify-end">
+            <Link
+              href="/"
+              className="text-xs text-secondary hover:text-primary transition-colors flex items-center gap-1"
+            >
+              <Home className="w-3 h-3" />
+              Home
+            </Link>
+          </div>
+        </div>
+
+        <div className="p-8 sm:p-10">
+          <div className="text-center space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-accent/10 text-accent mx-auto flex items-center justify-center">
+              <span className="text-2xl">?</span>
+            </div>
+            <h1 className="text-xl font-semibold text-primary tracking-tight">
+              This page doesn’t exist
+            </h1>
+            <p className="text-sm text-secondary max-w-[280px] mx-auto">
+              The link you followed may be broken, or the page may have been removed.
+              Return to the homepage or try again later.
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
