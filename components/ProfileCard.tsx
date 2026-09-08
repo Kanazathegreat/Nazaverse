@@ -7,7 +7,7 @@ interface ProfileData {
   bio?: string | null;
   bannerUrl?: string | null;
   avatarUrl?: string | null;
-  links: LinkItemProps[];
+  links: (LinkItemProps & { entranceDelay?: number })[];
 }
 
 interface ProfileCardProps {
@@ -68,11 +68,24 @@ export default function ProfileCard({ data }: ProfileCardProps) {
           )}
         </div>
 
-        {/* Links Stack */}
+        {/* Links Stack — each item wrapped for staggered entrance if delay provided */}
         <div className="flex flex-col gap-2.5">
           {data.links.length > 0 ? (
             data.links.map((link, idx) => (
-              <LinkItem key={idx} {...link} />
+              <div
+                key={idx}
+                // animate-fade-slide-up uses the keyframe from globals.css.
+                // When entranceDelay is provided the item starts hidden (opacity:0
+                // via animation fill-mode 'both') and slides in after the delay.
+                className={link.entranceDelay !== undefined ? 'animate-fade-slide-up' : ''}
+                style={
+                  link.entranceDelay !== undefined
+                    ? { animationDelay: `${link.entranceDelay}ms` }
+                    : undefined
+                }
+              >
+                <LinkItem title={link.title} url={link.url} icon={link.icon} />
+              </div>
             ))
           ) : (
             <div className="py-8 text-center text-sm text-secondary border-2 border-dashed border-black/[0.05] rounded-2xl">

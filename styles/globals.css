@@ -22,3 +22,34 @@
     letter-spacing: -0.025em;
   }
 }
+
+/* ── Custom keyframes ─────────────────────────────────────────────────────── */
+
+/* Gentle vertical bob for window card A (back window).
+   Purposefully slow (6s) and tiny (5px) so it reads as ambient, not bouncy. */
+@keyframes float-a {
+  0%, 100% { transform: rotate(-4deg) translateY(0px);   }
+  50%       { transform: rotate(-4deg) translateY(-5px);  }
+}
+
+/* Window card B (front window) — same amplitude, different phase so they
+   never move in sync, reinforcing the independent-windows illusion. */
+@keyframes float-b {
+  0%, 100% { transform: rotate(3deg) translateY(-3px);  }
+  50%       { transform: rotate(3deg) translateY(2px);   }
+}
+
+/* Used for staggered link-item entrances on the public profile page. */
+@keyframes fade-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Reduced-motion: disable all custom animations and transitions ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

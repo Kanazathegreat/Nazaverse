@@ -37,9 +37,32 @@ const config: Config = {
         tighter: '-0.03em',
         tight: '-0.02em',
       },
+      // Animation utilities for the landing page scene
+      keyframes: {
+        'float-a': {
+          '0%, 100%': { transform: 'rotate(-4deg) translateY(0px)'  },
+          '50%':       { transform: 'rotate(-4deg) translateY(-5px)' },
+        },
+        'float-b': {
+          '0%, 100%': { transform: 'rotate(3deg) translateY(-3px)' },
+          '50%':       { transform: 'rotate(3deg) translateY(2px)'  },
+        },
+        'fade-slide-up': {
+          from: { opacity: '0', transform: 'translateY(10px)' },
+          to:   { opacity: '1', transform: 'translateY(0)'    },
+        },
+      },
+      animation: {
+        // float-a/b: slow 6-7s loops, different durations to drift out of phase
+        'float-a': 'float-a 6s ease-in-out infinite',
+        'float-b': 'float-b 7.3s ease-in-out infinite',
+        // fade-slide-up: 420ms used by link items with a CSS delay variable
+        'fade-slide-up': 'fade-slide-up 420ms ease both',
+      },
     },
   },
   plugins: [],
 };
 
 export default config;
+

@@ -14,6 +14,8 @@ export default function ProfilePageClient({ username }: Props) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [links, setLinks] = useState<any[]>([]);
+  // Drives the card+banner entrance fade (separate from the link stagger below)
+  const [cardVisible, setCardVisible] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -25,7 +27,6 @@ export default function ProfilePageClient({ username }: Props) {
           .single();
 
         if (!profileData) {
-          // Should not happen because we checked in server, but just in case
           setLoading(false);
           return;
         }
@@ -43,6 +44,8 @@ export default function ProfilePageClient({ username }: Props) {
         console.error(err);
       } finally {
         setLoading(false);
+        // One rAF so the browser paints opacity:0 before the class flips in
+        requestAnimationFrame(() => setCardVisible(true));
       }
     })();
   }, [username, supabase]);
@@ -61,16 +64,31 @@ export default function ProfilePageClient({ username }: Props) {
     bio: profile.bio,
     bannerUrl: profile.banner_url,
     avatarUrl: profile.avatar_url,
-    links: links.map((l) => ({
+    // Attach a per-link animation delay for the staggered entrance.
+    // ProfileCard maps links → LinkItem; we pass the delay as a custom prop
+    // that ProfileCard forwards via inline style on each wrapper div.
+    // The animate-fade-slide-up class + animation-delay drives the stagger.
+    links: links.map((l, i) => ({
       title: l.title,
       url: l.url,
       icon: l.icon || undefined,
+      // 50ms per item, starting after the card itself has entered (~200ms)
+      entranceDelay: 200 + i * 60,
     })),
   };
 
   return (
     <main className="min-h-screen py-10 px-4 flex items-center justify-center bg-background">
-      <ProfileCard data={cardData} />
+      {/* Card fades in as a whole once data is ready */}
+      <div
+        style={{
+          opacity: cardVisible ? 1 : 0,
+          transform: cardVisible ? 'translateY(0)' : 'translateY(12px)',
+          transition: 'opacity 400ms ease, transform 400ms ease',
+        }}
+      >
+        <ProfileCard data={cardData} />
+      </div>
     </main>
   );
 }
