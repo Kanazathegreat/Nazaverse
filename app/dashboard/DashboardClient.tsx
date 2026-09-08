@@ -325,7 +325,8 @@ export default function DashboardClient({ initialProfile, initialLinks, user }: 
     setSuccessMsg(null);
 
     // If GIF, skip crop and upload directly
-    if (file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif')) {
+    const isGif = file.type === 'image/gif' || file.type === 'image/x-gif' || file.name.toLowerCase().endsWith('.gif');
+    if (isGif) {
       executeUpload(file, bucket, file);
       return;
     }
@@ -368,12 +369,16 @@ export default function DashboardClient({ initialProfile, initialLinks, user }: 
     isAvatar ? setUploadingAvatar(true) : setUploadingBanner(true);
 
     try {
-      const fileExt = originalFile.name.split('.').pop() || 'jpg';
-      const filePath = `${user.id}/${isAvatar ? 'avatar' : 'banner'}.${file.type === 'image/gif' ? fileExt : 'jpg'}`;
+      const isGif = originalFile.type === 'image/gif' || originalFile.type === 'image/x-gif' || originalFile.name.toLowerCase().endsWith('.gif');
+      const fileExt = isGif ? 'gif' : (originalFile.name.split('.').pop() || 'jpg');
+      const filePath = `${user.id}/${isAvatar ? 'avatar' : 'banner'}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { 
+          upsert: true,
+          contentType: isGif ? 'image/gif' : (file.type || 'image/jpeg'),
+        });
 
       if (uploadError) throw uploadError;
 
