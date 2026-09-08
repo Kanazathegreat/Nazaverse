@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   Loader2, ExternalLink, LogOut, CheckCircle, AlertCircle, Camera, 
-  Plus, Trash2, Edit2, GripVertical, X, Check,
+  Plus, Trash2, Edit2, GripVertical, X, Check, Copy, Calendar, ShieldAlert,
   Globe, Github, Twitter, Instagram, Youtube, Linkedin, Mail, Heart, FileText, Code, Music, Video,
   ZoomIn
 } from 'lucide-react';
@@ -39,6 +39,7 @@ interface Profile {
   bio?: string | null;
   avatar_url?: string | null;
   banner_url?: string | null;
+  created_at?: string | null;
 }
 
 interface LinkItem {
@@ -224,6 +225,14 @@ export default function DashboardClient({ initialProfile, initialLinks, user }: 
 
   // Delete confirmation state
   const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
+
+  // Copy link state
+  const [copied, setCopied] = useState(false);
+
+  // Settings & Account Deletion state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmUsername, setDeleteConfirmUsername] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Username availability check
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
@@ -558,6 +567,41 @@ export default function DashboardClient({ initialProfile, initialLinks, user }: 
     router.refresh();
   };
 
+  const copyToClipboard = () => {
+    const url = `${window.location.origin}/${username}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      // 1. Delete links
+      await supabase.from('links').delete().eq('profile_id', user.id);
+      
+      // 2. Delete storage files
+      const { data: avatarFiles } = await supabase.storage.from('avatars').list(`${user.id}`);
+      if (avatarFiles?.length) await supabase.storage.from('avatars').remove(avatarFiles.map(f => `${user.id}/${f.name}`));
+      
+      const { data: bannerFiles } = await supabase.storage.from('banners').list(`${user.id}`);
+      if (bannerFiles?.length) await supabase.storage.from('banners').remove(bannerFiles.map(f => `${user.id}/${f.name}`));
+
+      // 3. Delete profile
+      await supabase.from('profiles').delete().eq('id', user.id);
+
+      // 4. Sign out
+      await supabase.auth.signOut();
+      router.push('/');
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Failed to delete account completely.');
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   return (
     <>
       <div className="w-full max-w-[560px] rounded-2xl bg-surface shadow-macos border border-black/[0.08] overflow-hidden my-6">
@@ -645,25 +689,54 @@ export default function DashboardClient({ initialProfile, initialLinks, user }: 
               />
             </div>
 
-            <div className="pb-1">
+            <div className="pb-1 flex items-center gap-2">
               {username ? (
-                <Link
-                  href={`/${username}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 text-xs font-medium text-accent bg-accent/10 border border-accent/20 rounded-xl hover:bg-accent/20 transition-all flex items-center gap-1.5"
-                >
-                  <span>View profile</span>
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
+                <>
+                  <Link
+                    href={`/${username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 text-xs font-medium text-accent bg-accent/10 border border-accent/20 rounded-xl hover:bg-accent/20 transition-all flex items-center gap-1.5"
+                  >
+                    <span>View profile</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={copyToClipboard}
+                    className="px-3 py-1.5 text-xs font-medium text-secondary hover:text-primary bg-neutral-100 hover:bg-neutral-200/80 border border-black/[0.08] rounded-xl transition-all flex items-center gap-1.5"
+                    title="Copy public profile link"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3 h-3 text-traffic-green" />
+                        <span className="text-traffic-green font-semibold">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy link</span>
+                      </>
+                    )}
+                  </button>
+                </>
               ) : (
-                <span
-                  className="px-3 py-1.5 text-xs font-medium text-neutral-400 bg-neutral-100 rounded-xl cursor-not-allowed flex items-center gap-1.5"
-                  title="Set a username to view your profile"
-                >
-                  <span>View profile</span>
-                  <ExternalLink className="w-3 h-3" />
-                </span>
+                <>
+                  <span
+                    className="px-3 py-1.5 text-xs font-medium text-neutral-400 bg-neutral-100 rounded-xl cursor-not-allowed flex items-center gap-1.5"
+                    title="Set a username to view your profile"
+                  >
+                    <span>View profile</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </span>
+                  <span
+                    className="px-3 py-1.5 text-xs font-medium text-neutral-400 bg-neutral-100 rounded-xl cursor-not-allowed flex items-center gap-1.5"
+                    title="Set a username to copy link"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>Copy link</span>
+                  </span>
+                </>
               )}
             </div>
           </div>
@@ -841,13 +914,27 @@ export default function DashboardClient({ initialProfile, initialLinks, user }: 
 
             {/* Profile Details Form */}
             <div className="space-y-4 pt-6 border-t border-black/[0.06]">
-              <div>
-                <h2 className="text-base font-semibold text-primary tracking-tight">
-                  Profile Details
-                </h2>
-                <p className="text-xs text-secondary mt-0.5">
-                  Manage your username, display name, and bio
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-primary tracking-tight">
+                    Profile Details
+                  </h2>
+                  <p className="text-xs text-secondary mt-0.5">
+                    Manage your username, display name, and bio
+                  </p>
+                </div>
+                {(initialProfile?.created_at || user.created_at) && (
+                  <div className="flex items-center gap-1.5 text-xs text-secondary bg-neutral-100/80 px-2.5 py-1 rounded-lg">
+                    <Calendar className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                    <span>
+                      Member since{' '}
+                      {new Date(initialProfile?.created_at || user.created_at).toLocaleDateString('en-US', {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <form onSubmit={handleSaveProfile} className="space-y-4">
@@ -953,6 +1040,43 @@ disabled={loading || usernameStatus === 'taken'}
                 </div>
               </form>
             </div>
+
+            {/* Settings & Danger Zone */}
+            <div className="space-y-4 pt-6 border-t border-black/[0.06]">
+              <div>
+                <h2 className="text-base font-semibold text-primary tracking-tight">
+                  Settings
+                </h2>
+                <p className="text-xs text-secondary mt-0.5">
+                  Account management and preferences
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-traffic-red/20 bg-traffic-red/[0.02] space-y-3">
+                <div className="flex items-center gap-2 text-traffic-red font-medium text-xs">
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  <span className="uppercase tracking-wider font-semibold">Danger Zone</span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-primary">Delete Account</p>
+                    <p className="text-[11px] text-secondary">
+                      Permanently remove your profile, links, and uploaded files.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteConfirmUsername('');
+                      setDeleteModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium text-traffic-red bg-traffic-red/10 border border-traffic-red/20 hover:bg-traffic-red/20 rounded-xl transition-all shrink-0"
+                  >
+                    Delete Account
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1030,6 +1154,81 @@ disabled={loading || usernameStatus === 'taken'}
                   disabled={processingCrop}
                   onClick={() => setCropModalOpen(false)}
                   className="py-2.5 px-4 bg-neutral-100 text-secondary hover:text-primary font-medium text-sm rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Account Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-[440px] rounded-2xl bg-surface shadow-macos border border-traffic-red/30 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+            {/* macOS Window Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.05] bg-surface/80 backdrop-blur-md">
+              <div className="flex items-center space-x-2">
+                <span className="w-3 h-3 rounded-full bg-traffic-red inline-block shadow-sm" />
+                <span className="w-3 h-3 rounded-full bg-traffic-yellow inline-block shadow-sm" />
+                <span className="w-3 h-3 rounded-full bg-traffic-green inline-block shadow-sm" />
+              </div>
+              <span className="text-xs font-medium text-traffic-red select-none tracking-tight flex items-center gap-1 font-semibold">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                Confirm Account Deletion
+              </span>
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="text-secondary hover:text-primary p-1"
+                disabled={deletingAccount}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="p-3.5 rounded-xl bg-traffic-red/10 border border-traffic-red/20 text-xs text-traffic-red space-y-1">
+                <p className="font-semibold">This action cannot be undone.</p>
+                <p className="text-[11px] leading-relaxed text-traffic-red/90">
+                  This will permanently delete your profile (@{username || 'yourname'}), all your links, and your uploaded avatar and banner files.
+                </p>
+              </div>
+
+              <div className="space-y-2 text-left">
+                <label className="text-xs font-medium text-secondary">
+                  To confirm, type <span className="font-mono font-bold text-primary">{username || 'yourname'}</span> below:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmUsername}
+                  onChange={(e) => setDeleteConfirmUsername(e.target.value)}
+                  placeholder={username || 'yourname'}
+                  disabled={deletingAccount}
+                  className="w-full px-3.5 py-2.5 text-sm bg-neutral-50/50 border border-black/[0.08] rounded-xl text-primary font-mono focus:outline-none focus:ring-2 focus:ring-traffic-red/40 focus:border-traffic-red"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={deletingAccount || deleteConfirmUsername.trim() !== (username || 'yourname').trim()}
+                  onClick={handleDeleteAccount}
+                  className="flex-1 py-2.5 px-4 bg-traffic-red text-white font-medium text-xs rounded-xl hover:bg-traffic-red/90 transition-all shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {deletingAccount ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Deleting Account...</span>
+                    </>
+                  ) : (
+                    <span>Confirm Delete Account</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  disabled={deletingAccount}
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="py-2.5 px-4 bg-neutral-100 text-secondary hover:text-primary font-medium text-xs rounded-xl transition-all"
                 >
                   Cancel
                 </button>
