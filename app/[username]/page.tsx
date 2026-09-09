@@ -31,16 +31,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PublicProfilePage({ params }: PageProps) {
   const supabase = createClient();
 
-  // Check if profile exists to enable proper 404
-  const { data: profileExists } = await supabase
+  // Fetch profile
+  const { data: profile } = await supabase
     .from('profiles')
-    .select('id')
+    .select('*')
     .eq('username', params.username)
-    .single();
+    .maybeSingle();
 
-  if (!profileExists) {
+  if (!profile) {
     notFound();
   }
 
-  return <ProfilePageClient username={params.username} />;
+  // Fetch links using the fetched profile's ID
+  const { data: links } = await supabase
+    .from('links')
+    .select('*')
+    .eq('profile_id', profile.id)
+    .order('position', { ascending: true });
+
+  return <ProfilePageClient profile={profile} initialLinks={links || []} />;
 }

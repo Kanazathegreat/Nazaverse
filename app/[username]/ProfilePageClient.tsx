@@ -1,62 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import ProfileCard from '@/components/ProfileCard';
-import SkeletonProfileCard from '@/components/SkeletonProfileCard';
 
 interface Props {
-  username: string;
+  profile: any;
+  initialLinks: any[];
 }
 
-export default function ProfilePageClient({ username }: Props) {
-  const supabase = createClient();
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [links, setLinks] = useState<any[]>([]);
-  // Drives the card+banner entrance fade (separate from the link stagger below)
+export default function ProfilePageClient({ profile, initialLinks }: Props) {
+  // Drives the card+banner entrance fade
   const [cardVisible, setCardVisible] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('username', username)
-          .single();
-
-        if (!profileData) {
-          setLoading(false);
-          return;
-        }
-
-        setProfile(profileData);
-
-        const { data: linksData } = await supabase
-          .from('links')
-          .select('*')
-          .eq('profile_id', profileData.id)
-          .order('position', { ascending: true });
-
-        setLinks(linksData || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-        // One rAF so the browser paints opacity:0 before the class flips in
-        requestAnimationFrame(() => setCardVisible(true));
-      }
-    })();
-  }, [username, supabase]);
-
-  if (loading) {
-    return (
-      <main className="min-h-screen py-10 px-4 flex items-center justify-center bg-background">
-        <SkeletonProfileCard />
-      </main>
-    );
-  }
+    // One rAF so the browser paints opacity:0 before the class flips in
+    const id = requestAnimationFrame(() => setCardVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   const cardData = {
     name: profile.display_name || profile.username,
@@ -65,10 +25,7 @@ export default function ProfilePageClient({ username }: Props) {
     bannerUrl: profile.banner_url,
     avatarUrl: profile.avatar_url,
     // Attach a per-link animation delay for the staggered entrance.
-    // ProfileCard maps links → LinkItem; we pass the delay as a custom prop
-    // that ProfileCard forwards via inline style on each wrapper div.
-    // The animate-fade-slide-up class + animation-delay drives the stagger.
-    links: links.map((l, i) => ({
+    links: initialLinks.map((l, i) => ({
       title: l.title,
       url: l.url,
       icon: l.icon || undefined,
@@ -81,6 +38,7 @@ export default function ProfilePageClient({ username }: Props) {
     <main className="min-h-screen py-10 px-4 flex items-center justify-center bg-background">
       {/* Card fades in as a whole once data is ready */}
       <div
+        className="w-full flex justify-center"
         style={{
           opacity: cardVisible ? 1 : 0,
           transform: cardVisible ? 'translateY(0)' : 'translateY(12px)',

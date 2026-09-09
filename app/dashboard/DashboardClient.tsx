@@ -392,8 +392,7 @@ export default function DashboardClient({ initialProfile, initialLinks, user }: 
       const updateKey = isAvatar ? 'avatar_url' : 'banner_url';
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ [updateKey]: urlWithTimestamp })
-        .eq('id', user.id);
+        .upsert({ id: user.id, [updateKey]: urlWithTimestamp }, { onConflict: 'id' });
 
       if (updateError) throw updateError;
 
@@ -431,6 +430,8 @@ export default function DashboardClient({ initialProfile, initialLinks, user }: 
       username: username || null,
       display_name: displayName || null,
       bio: bio || null,
+      avatar_url: avatarUrl || null,
+      banner_url: bannerUrl || null,
       updated_at: new Date().toISOString(),
     };
 
