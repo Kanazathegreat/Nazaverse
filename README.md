@@ -1,112 +1,81 @@
 # Nazaverse
 
-> Premium link-in-bio & personal profile hub web app inspired by macOS/iOS design language.
+A modern, macOS-inspired link-in-bio platform for creators and developers. Nazaverse lets you build a personal profile page with a custom avatar, banner, bio, and an organized list of links — all under your own username.
 
----
+**Live demo:** https://nazaverse.vercel.app
 
-##  About
+## Features
 
-**Nazaverse** reimagines link-in-bio profiles as native macOS application windows rather than standard web pages. Built with clean lines, authentic window chrome (traffic light controls), soft layered shadows, and tactile micro-interactions.
+- **Magic link authentication** — passwordless sign-in via Supabase Auth
+- **Custom profile** — display name, username, bio
+- **Avatar & banner upload** — supports static images and animated GIFs, with an in-browser crop tool for static images
+- **Link management** — add, edit, delete, and drag-and-drop reorder links, each with a title, URL, and icon
+- **Public profile pages** — shareable, SEO-friendly pages at `/{username}`
+- **Account settings** — copy public profile link, view membership date, and permanently delete an account
+- **Responsive design** — built mobile-first, tested across common breakpoints
+- **macOS-inspired visual language** — traffic-light window chrome, soft shadows, frosted-glass accents, and subtle motion throughout
 
----
+## Tech Stack
 
-## 🎨 Design System
+- **Framework:** Next.js 14 (App Router), TypeScript
+- **Styling:** Tailwind CSS
+- **Backend:** Supabase (Auth, Postgres database, Storage)
+- **Drag & drop:** dnd-kit
+- **Icons:** lucide-react
+- **Hosting:** Vercel
+- **Transactional email:** Resend (SMTP)
 
-| Token | Value / Specification | Description |
-| :--- | :--- | :--- |
-| **Background** | `#F5F5F7` | Apple neutral canvas |
-| **Surface** | `#FFFFFF` | Window / card background |
-| **Text Primary** | `#1D1D1F` | High-contrast body & heading text |
-| **Text Secondary** | `#6E6E73` | Subtitles, metadata & secondary labels |
-| **Accent** | `#0A84FF` | macOS System Blue for interactive elements |
-| **Traffic Lights** | `#FF5F57` / `#FEBC2E` / `#28C840` | Close / Minimize / Expand window dots |
-| **Typography** | Inter (`next/font/google`) | `-0.04em` to `-0.02em` tight tracking on titles |
-| **Border Radius** | `16px` (xl), `24px` (2xl), `32px` (3xl) | Large squircle-inspired curves |
-| **Shadows** | `soft` / `macos` | Diffuse ambient drop shadows |
+## Getting Started
 
----
+### Prerequisites
 
-## 🛠 Tech Stack
+- Node.js 18 or later
+- A Supabase project
+- A Resend account (for production email delivery)
 
-- **Framework**: Next.js 14+ (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS + custom tokens
-- **Icons**: Lucide React
-- **Backend / Auth / Storage**: Supabase (`@supabase/ssr`, PostgreSQL, Storage buckets)
-- **Deployment**: Vercel
+### Installation
 
----
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/kanazathegreat/nazaverse.git
+   cd nazaverse
+   ```
 
-## 📁 Project Structure
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```text
-Nazaverse/
-├── app/
-│   ├── layout.tsx         # Root layout with Inter font & global styles
-│   └── page.tsx           # Public profile view
-├── components/
-│   ├── ProfileCard.tsx    # macOS window profile container
-│   ├── LinkItem.tsx       # Interactive link button with hover lift
-│   └── Wordmark.tsx       # Logo wordmark component
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts      # Client-side Supabase helper
-│   │   └── server.ts      # Server-side Supabase SSR helper
-│   └── utils.ts           # Class merging helper (cn)
-├── styles/
-│   └── globals.css        # Tailwind layers & CSS variables
-├── .env.example           # Supabase environment variables template
-├── tailwind.config.ts     # macOS theme configuration
-└── next.config.mjs        # Next.js config + remote image patterns
-```
+3. Create a `.env.local` file in the project root:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-publishable-key
+   ```
 
----
+4. Set up the database schema and storage buckets in your Supabase project (see `Database Schema` below).
 
-## 🗺 Roadmap & Execution Plan
+5. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-- [x] **Phase 1: Project Scaffolding & Design Foundation**
-  - Next.js 14 App Router, TypeScript, Tailwind config with design tokens.
-  - Supabase client architecture configured for SSR.
-- [x] **Phase 2: macOS Window Component & UI Prototype**
-  - `<ProfileCard />` with traffic light header, overlapping avatar/banner, and link stack.
-  - Interactive `<LinkItem />` with spring hover-lift transitions.
-  - Responsive mobile-first adaptation.
-- [ ] **Phase 3: Supabase Data Integration**
-  - Dynamic routing (`/[username]`).
-  - Read from `profiles` and `links` database tables.
-  - Avatar & banner assets served from Supabase storage buckets (`avatars`, `banners`).
-- [ ] **Phase 4: Authentication & Profile Editor**
-  - Supabase Auth (magic link / OAuth).
-  - Drag-and-drop link reordering, avatar/banner upload modal.
-  - Live preview editor pane.
-- [ ] **Phase 5: Analytics & Polish**
-  - Click tracking per link.
-  - OG image generation for profile cards.
-  - Production deployment to Vercel.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
----
+## Database Schema
 
-## 🚀 Getting Started
+Nazaverse uses two main tables in Supabase:
 
-### 1. Clone & Install
+- **`profiles`** — id, username, display_name, bio, avatar_url, banner_url, created_at, updated_at
+- **`links`** — id, profile_id, title, url, icon, position, created_at
 
-```bash
-npm install
-```
+Both tables use Row Level Security: public read access for profile pages, and write access restricted to the authenticated owner (`auth.uid()` matched against `profiles.id`).
 
-### 2. Environment Setup
+Two public Storage buckets are used: `avatars` and `banners`, each scoped so users can only upload to their own folder (`{user_id}/...`).
 
-Copy `.env.example` to `.env.local` and add your Supabase credentials:
+## Deployment
 
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
+Nazaverse is deployed on Vercel, connected directly to this repository. Environment variables must be configured in the Vercel project settings, and the Supabase project's Auth redirect URLs must include the production domain.
 
-### 3. Run Development Server
+## License
 
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to view profile hub.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
